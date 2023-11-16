@@ -1,3 +1,7 @@
 
 *.0
 *.pt
+*.out
+*.tsv
+runs/Raf/MiniBatchsize 8 LR 0.01/00000/default/sprite.png
+*.pbtxt
