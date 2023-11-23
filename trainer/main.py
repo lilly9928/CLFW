@@ -6,13 +6,13 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from torchvision import transforms
-from torch.utils.data import DataLoader
 from models.transformNetwork448 import init_weights,Network,Bottleneck
 from torch.utils.tensorboard import SummaryWriter
-from data_loader.raf_imagedata import RafDataset
+
+from utils.utils import dataset_loader
 
 torch.cuda.empty_cache()
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def printsave(*a):
     file = open('D:\\GitHub\\-WIL-Expression-Recognition-Study\\TirpletLoss_FER', 'a')
@@ -30,11 +30,7 @@ def imshow(img,text=None,should_save=False):
     plt.show()
 
 
-# torch.manual_seed(2020)
-# np.random.seed(2020)
-# random.seed(2020)
-
-
+#TODO: hyperparmeters -> args 로 받게 바꾸기
 #hyperparmeters
 batch_size = 8
 epochs =100
@@ -43,16 +39,6 @@ embedding_dims = 2
 num_layers = 3
 parallels=[0.5]
 
-train_csvdir = 'D:/data/FER/ck_images/ck_train.csv'
-traindir = "D:/data/FER/ck_images/Images/ck_train/"
-val_csvdir= 'D:/data/FER/ck_images/ck_val.csv'
-valdir = "D:/data/FER/ck_images/Images/ck_val/"
-
-fer_train_csvdir = 'D:/data/FER/train.csv'
-fer_traindir = "D:/data/FER/train/"
-fer_val_csvdir = 'D:/data/FER/train_val.csv'
-fer_test_csvdir= 'D:/data/FER/val_1.csv'
-fer_testdir = "D:/data/FER/val_1/"
 
 eval_transforms = transforms.Compose([
     transforms.ToPILImage(),
@@ -62,46 +48,15 @@ eval_transforms = transforms.Compose([
     ])
 
 transformation = transforms.Compose([transforms.ToTensor()])
+
+
+train_dataset, train_loader, test_loader,classes = dataset_loader('raf',batch_size,transformation,eval_transforms)
+
 writer = SummaryWriter(f'runs/raf/MiniBatchsize {batch_size} LR {learning_rate}')
-#fer
-# train_dataset =FERimageData(csv_file = fer_train_csvdir, img_dir = fer_traindir, datatype = 'train',transform = transformation)
-# train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-#
-# val_dataset =FERimageData(csv_file = fer_val_csvdir, img_dir = fer_traindir, datatype = 'train',transform = transformation)
-# val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=True)
-#
-# test_dataset =FERimageData(csv_file = fer_test_csvdir, img_dir = fer_testdir, datatype = 'val_1',transform = transformation)
-# test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=True)
 
-#ck+
-# train_dataset =ImageData(csv_file = train_csvdir, img_dir = traindir, datatype = 'ck_train',transform = transformation)
-# train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-#
-# val_dataset =ImageData(csv_file = val_csvdir, img_dir = valdir, datatype = 'ck_val',transform = transformation)
-# val_loader = DataLoader(dataset=val_dataset, batch_size=1, shuffle=True)
-
-#raf
-train_dataset= RafDataset(path='D:/data/FER/RAF/basic', phase='train', transform=eval_transforms)
-train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
-# val_dataset= RafDataset(path='D:/data/FER/RAF/basic', phase='test', transform=eval_transforms)
-# val_loader = DataLoader(dataset=val_dataset, batch_size=1, shuffle=False)
 
 #device, model
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# model = Network(Bottleneck, [3, 4, 6, 3],num_layers=3).to(device)
-# model.apply(init_weights)
-# optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-# Triplet_criterion =nn.TripletMarginLoss(margin=0.5, p=2)
-# criterion = nn.CrossEntropyLoss(reduction='sum')
-#
-# model.train()
-
-# ck+ class
-#classes = ['AN','DI','FE','HA','SA','SU','NE']
-
-classes = ['SU','FE','DI','HA','SA','AN','NE']
 
 for scale in parallels:
 
@@ -134,7 +89,6 @@ for scale in parallels:
             anchor_feature,anchor_out = model(anchor_img)
             positive_feature,positive_out = model(positive_img)
             negative_feature,negative_out = model(negative_img)
-
 
             Triplet_loss = Triplet_criterion(anchor_feature, positive_feature, negative_feature)
             entropy_loss=criterion(anchor_out,anchor_label)

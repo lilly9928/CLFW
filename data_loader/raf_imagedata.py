@@ -147,7 +147,7 @@ if __name__ == "__main__":
        # transforms.RandomErasing(scale=(0.02, 0.25))
     ])
 
-    dataset=RafDataset(path='D:\\data\\FER\\RAF\\basic',phase='val', transform=train_transforms)
+    dataset=RafDataset(path='D:\\data\\FER\\RAF\\basic',phase='test', transform=train_transforms)
 
     grid_size=4
     rnd_ind = np.random.randint(0, len(dataset), grid_size)
